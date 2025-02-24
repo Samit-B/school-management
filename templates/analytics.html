@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Student Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script> <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Dark Theme Styles */
+body {
+    background-color: #6de2ff;
+    color: #e0e0e0;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Main Layout */
+.main-content {
+    margin-left: 260px;
+    padding: 20px;
+    min-height: 100vh;
+    background-color: #2cd3d3;
+    color: #e0e0e0;
+}
+
+/* Card Styling */
+.card {
+    background-color: #aaeded;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    color: white;
+}
+
+/* Headings */
+h1, h2 {
+    color: #ffcc00;
+}
+
+
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .grid-cols-3 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+    </style>
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">📊 Analytics Dashboard</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Bar Chart -->
+            <div class="card">
+                <h2 class="text-xl font-semibold text-gray-700 text-center mb-4">📈 Student Marks Chart</h2>
+                <canvas id="marksChart"></canvas>
+            </div>
+
+            <!-- Line Chart -->
+            <div class="card">
+                <h2 class="text-xl font-semibold text-gray-700 text-center mb-4">📉 Marks Trend Over Time</h2>
+                <canvas id="lineChart"></canvas>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="card">
+                <h2 class="text-xl font-semibold text-gray-700 text-center mb-4">📊 Marks Distribution</h2>
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        
+
+
+        document.getElementById("logout-button").addEventListener("click", function (event) {
+            event.preventDefault();
+            // Perform logout action (e.g., clear session, redirect to login page)
+            fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/login'; // Redirect to login page
+                } else {
+                    alert('Logout failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error during logout:', error);
+            });
+        });
+    });
+    async function loadCharts() {
+            try {
+                let response = await fetch("/students/marks");
+                let students = await response.json();
+
+                let studentNames = students.map(student => student.name);
+                let studentMarks = students.map(student => student.marks);
+
+                let markRanges = [0, 0, 0, 0, 0];
+
+                students.forEach(student => {
+                    let marks = student.marks;
+                    if (marks <= 100) markRanges[0]++;
+                    else if (marks <= 200) markRanges[1]++;
+                    else if (marks <= 300) markRanges[2]++;
+                    else if (marks <= 400) markRanges[3]++;
+                    else markRanges[4]++;
+                });
+
+                let ctxBar = document.getElementById("marksChart").getContext("2d");
+                new Chart(ctxBar, {
+                    type: "bar",
+                    data: {
+                        labels: studentNames,
+                        datasets: [{
+                            label: "Marks (Out of 500)",
+                            data: studentMarks,
+                            backgroundColor: "rgba(54, 162, 235, 0.5)",
+                            borderColor: "rgba(54, 162, 235, 1)",
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true, max: 500 }
+                        }
+                    }
+                });
+
+                let ctxLine = document.getElementById("lineChart").getContext("2d");
+                new Chart(ctxLine, {
+                    type: "line",
+                    data: {
+                        labels: studentNames,
+                        datasets: [{
+                            label: "Marks Over Time",
+                            data: studentMarks,
+                            borderColor: "red",
+                            backgroundColor: "rgba(255, 99, 132, 0.2)",
+                            fill: true
+                        }]
+                    },
+                    options: { responsive: true }
+                });
+
+                let ctxPie = document.getElementById("pieChart").getContext("2d");
+                new Chart(ctxPie, {
+                    type: "pie",
+                    data: {
+                        labels: ["0-100 (Very Low)", "101-200 (Low)", "201-300 (Average)", "301-400 (Good)", "401-500 (Excellent)"],
+                        datasets: [{
+                            data: markRanges,
+                            backgroundColor: ["red", "orange", "yellow", "green", "blue"]
+                        }]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error loading charts:", error);
+            }
+        }
+
+        window.onload = loadCharts;
+
+        document.addEventListener("DOMContentLoaded", function () {
+          
+
+        });
+    </script>
+   
+</body>
+</html>
